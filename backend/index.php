@@ -65,6 +65,29 @@ if (key_exists("task", $_GET)) {
             print_r($json);
             break;
 
+        case "get_classes":
+            $_result = $con->query("
+                SELECT
+                    c.id AS classId,
+                    c.className,
+                    c.studentCount
+                FROM
+                    class c;
+            ") or die(mysqli_error($con));
+
+            $result = Array();
+            while ($class = $_result->fetch_assoc()) {
+                array_push($result, $class);
+            }
+
+            $json = json_encode($result, JSON_PRETTY_PRINT);
+            print_r($json);
+            break;
+
+        case "save_booking":
+            print_r($_POST);
+            break;
+
         default:
             print_r("unknown task...");
             break;

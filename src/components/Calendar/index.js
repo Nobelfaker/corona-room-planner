@@ -1,25 +1,45 @@
 import React, {useEffect, useState} from "react";
-import { DatePicker, Divider, Button } from "antd";
+import {DatePicker, Divider, Button, Drawer, Form, Select } from "antd";
 import moment from "moment";
 import axios from "axios";
+
+const layout = {
+    labelCol: {
+        span: 6,
+    },
+    wrapperCol: {
+        span: 18,
+    },
+};
 
 function Calendar () {
     const [date, setDate] = useState(moment());
     const [rooms, setRooms] = useState([]);
+    const [classes, setClasses] = useState([]);
+    const [showDrawer, setShowDrawer] = useState(false);
 
     const maxLessons = 10;
     const lessons = Array(maxLessons).fill(0);
 
     useEffect(() => {
-        axios.get("http://localhost/corona-room-planner/backend/?task=get_rooms")
+        axios.get("http://localhost/grongworks/corona-room-planner/backend/?task=get_rooms")
             .then(result => {
                 setRooms(result.data);
+
+                axios.get("http://localhost/grongworks/corona-room-planner/backend/?task=get_classes")
+                    .then(classResult => {
+                        setClasses(classResult.data);
+                    })
+                    .catch(error => {
+                        console.log("ERROR", error);
+                    });
             })
             .catch(error => {
                 console.log("ERROR", error);
             })
     }, []);
 
+    const [form] = Form.useForm();
     return <React.Fragment> 
         <DatePicker 
             defaultPickerValue={date}
@@ -30,7 +50,7 @@ function Calendar () {
         />
         &nbsp;
         <Button type="primary" onClick={() => {
-            window.alert("Wir fügen eine Raumbuchung hinzu :)");
+            setShowDrawer(!showDrawer);
         }}>Raum buchen</Button>
         <Divider />
         <table style={{ width: "100%" }} border={1}>
@@ -70,6 +90,83 @@ function Calendar () {
                 }
             </tbody>
         </table>
+
+        <Drawer
+            title="Raumbuchung"
+            placement="right"
+            closable={false}
+            onClose={() => {
+                form.resetFields();
+                setShowDrawer(!showDrawer)
+            }}
+            visible={showDrawer}
+            width={600}
+        >
+            <Form
+                { ...layout }
+                form={form}
+            >
+                <div>
+                    <div class="exchange-details">
+                        <Form.Item noStyle name="roomId">
+                            <Select
+                                placeholder="Bitte wähle einen Raum aus"
+                                style={{ width: "100%", marginBottom: "15px" }}
+                            >
+                                { rooms.map(room => <Select.Option value={room.id}>{room.name}</Select.Option>)}
+                            </Select>
+                        </Form.Item>
+
+                        <Form.Item noStyle name="bookingDate">
+                            <DatePicker
+                                placeholder={"Bitte wähle ein Datum aus"}
+                                style={{ width: "100%", marginBottom: "15px" }}
+                                defaultPickerValue={moment()}
+                            />
+                        </Form.Item>
+
+                        <Form.Item noStyle name="classId">
+                            <Select
+                                placeholder="Bitte wähle eine Klasse aus"
+                                style={{ width: "100%", marginBottom: "15px" }}
+                            >
+                                { classes.map(_class => <Select.Option value={_class.classId}>{_class.className}</Select.Option>)}
+                            </Select>
+                        </Form.Item>
+
+                        <Form.Item noStyle name="lessons">
+                            <Select
+                                mode={"multiple"}
+                                placeholder="Bitte wählen Schulstunden aus"
+                                style={{ width: "100%", marginBottom: "15px" }}
+                            >
+                                { Object.keys(lessons).map(lessonIndex => <Select.Option value={parseInt(lessonIndex)+1}>{parseInt(lessonIndex) + 1}. Stunde</Select.Option>)}
+                            </Select>
+                        </Form.Item>
+
+                        <Form.Item noStyle style={{ marginTop: "30px" }}>
+                            <button type="submit" style={{ width: "100%" }} onClick={() => {
+                                form
+                                    .validateFields()
+                                    .then(values => {
+                                        console.log(values);
+                                        axios.post("http://localhost/grongworks/corona-room-planner/backend/?task=save_booking", {
+                                            ...values
+                                        }, {
+                                            headers: {'Access-Control-Allow-Origin': '*'}
+                                        })
+                                            .then(res => console.log(res))
+                                            .catch(error => console.log(error));
+                                    })
+                                    .catch(info => {
+                                        console.log('Validate Failed:', info);
+                                    });
+                            }} >Raumbuchung speichern</button>
+                        </Form.Item>
+                    </div>
+                </div>
+            </Form>
+        </Drawer>
     </React.Fragment>
 };
 
