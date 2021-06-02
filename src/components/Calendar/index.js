@@ -30,7 +30,7 @@ function Calendar () {
         />
         &nbsp;
         <Button type="primary" onClick={() => {
-            window.alert("Ey, du Idi!");
+            window.alert("Wir fügen eine Raumbuchung hinzu :)");
         }}>Raum buchen</Button>
         <Divider />
         <table style={{ width: "100%" }} border={1}>
