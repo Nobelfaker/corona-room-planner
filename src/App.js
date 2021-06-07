@@ -10,7 +10,7 @@ const { Header, Content, Sider } = Layout;
 const { SubMenu } = Menu;
 
 function App() {
-    const [collapsed, setCollapse] = useState(true);
+    const [collapsed, setCollapse] = useState(false);
 
     return <React.Fragment>
         <Layout style={{ minHeight: '100vh' }}>
