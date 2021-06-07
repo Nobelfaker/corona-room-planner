@@ -21,7 +21,7 @@ function Calendar () {
     const maxLessons = 10;
     const lessons = Array(maxLessons).fill(0);
 
-    useEffect(() => {
+    function fetchData () {
         axios.get("http://localhost/grongworks/corona-room-planner/backend/?task=get_rooms")
             .then(result => {
                 setRooms(result.data);
@@ -36,7 +36,11 @@ function Calendar () {
             })
             .catch(error => {
                 console.log("ERROR", error);
-            })
+            });
+    }
+
+    useEffect(() => {
+        fetchData();
     }, []);
 
     const [form] = Form.useForm();
@@ -44,6 +48,7 @@ function Calendar () {
         <DatePicker 
             defaultPickerValue={date}
             defaultValue={date}
+            value={date}
             onChange={(date, dateString) => {
                 setDate(date);                
             }} 
@@ -107,7 +112,7 @@ function Calendar () {
                 form={form}
             >
                 <div>
-                    <div class="exchange-details">
+                    <div className="exchange-details">
                         <Form.Item noStyle name="roomId">
                             <Select
                                 placeholder="Bitte wähle einen Raum aus"
@@ -149,13 +154,20 @@ function Calendar () {
                                 form
                                     .validateFields()
                                     .then(values => {
-                                        console.log(values);
-                                        axios.post("http://localhost/grongworks/corona-room-planner/backend/?task=save_booking", {
-                                            ...values
-                                        }, {
-                                            headers: {'Access-Control-Allow-Origin': '*'}
-                                        })
-                                            .then(res => console.log(res))
+                                        setDate(values.bookingDate);
+
+                                        values.bookingDate = values.bookingDate.format("YYYY-MM-DD");
+                                        values.lessons = values.lessons.join("|");
+
+                                        const formData = new FormData();
+                                        for (const key of Object.keys(values)) {
+                                            formData.append(key, values[key]);
+                                        }
+                                        axios.post("http://localhost/grongworks/corona-room-planner/backend/?task=save_booking", formData)
+                                            .then(res => {
+                                                fetchData();
+                                                setShowDrawer(!showDrawer);
+                                            })
                                             .catch(error => console.log(error));
                                     })
                                     .catch(info => {
